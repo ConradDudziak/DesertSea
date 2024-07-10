@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69da3836a6f7b6e4d8d2250423f05c90, type: 3}
+  m_Name: Rock_Small
+  m_EditorClassIdentifier: 
+  prefabOptions:
+  - {fileID: 1370912804567766, guid: e91c19dbecf6f7a49bfccf46a1a587b7, type: 3}
+  - {fileID: 1093703386139254, guid: b9da4b6f808af454f81473c893b4a485, type: 3}
+  - {fileID: 1382063742406324, guid: e9d22b43666251c47afdd26f01d9c18c, type: 3}
+  - {fileID: 1317961673802554, guid: 70cab11d9700f1248bb95da420b9ed24, type: 3}
+  - {fileID: 1526564297707392, guid: 8543845c9eefb914fa0b224e6638aa38, type: 3}
+  minSitesPerChunk: 0
+  maxSitesPerChunk: 10
+  minHeightFoundAt: 0
+  maxHeightFoundAt: 0.25
+  minBuryDepth: 0
+  maxBuryDepth: 0.3
+  maxRotationX: 30
+  maxRotationY: 180
+  maxRotationZ: 30
+  minPerCluster: 0
+  maxPerCluster: 6
+  chanceToCauseCluster: 0.2
+  chanceToJoinCluster: 0.8
+  minNumOfOtherDoodadsInCluster: 0
+  maxNumOfOtherDoodadsInCluster: 3
+  occupyingSize: {x: 0.7, y: 0.5, z: 0.7}
+  clusterOptions:
+  - {fileID: 11400000, guid: 148bbbf4b4e72924ebf7858a4f90af44, type: 2}

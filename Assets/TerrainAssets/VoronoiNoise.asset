@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bc378e352b2bd04f880bb117c8f835c, type: 3}
+  m_Name: VoronoiNoise
+  m_EditorClassIdentifier: 
+  autoUpdate: 1
+  noiseSettings:
+    noiseShader: {fileID: 7200000, guid: f3b46586d4804664fab2a556594e4e84, type: 3}
+    frequency: 0.0025
+    angleOffset1: 2.01
+    cellDensity1: 4.02
+    angleOffset2: 2.74
+    cellDensity2: 11.53
+    lerpDelta: 0.65
+    simpleNoiseScale: 15
+    seed: 109
+    offset: {x: 3.31, y: -3.28}
+  useFalloff: 0
+  heightMultiplier: 79
+  heightCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.9910976
+      value: 2.492098
+      inSlope: 5.174694
+      outSlope: 5.174694
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.05500985
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

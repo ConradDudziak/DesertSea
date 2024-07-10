@@ -1,0 +1,166 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+//RWTexture2D<float4> Result;
+RWStructuredBuffer<float> _HeightMap;
+//RWStructuredBuffer<float2> _HeightMapTest;
+
+uniform float _Resolution, _Frequency, _OffsetX, _OffsetY, _AngleOffset1, _CellDensity1, _AngleOffset2, _CellDensity2, _LerpDelta, _NoiseScale;
+
+// Tiling and Offset Operations
+void Unity_TilingAndOffset_float(float2 UV, float2 Tiling, float2 Offset, out float2 Out);
+
+// Vornoi Noise Operations
+inline float2 Unity_Voronoi_RandomVector_float(float2 UV, float offset);
+void Unity_Voronoi_float(float2 UV, float AngleOffset, float CellDensity, out float Out, out float Cells);
+
+// Simple Noise Operations
+inline float Unity_SimpleNoise_RandomValue_float(float2 uv);
+inline float Unity_SimpleNnoise_Interpolate_float(float a, float b, float t);
+inline float Unity_SimpleNoise_ValueNoise_float(float2 uv);
+void Unity_SimpleNoise_float(float2 UV, float Scale, out float Out);
+
+// Multiply Operations
+void Unity_Multiply_float(float A, float B, out float Out);
+
+// Lerp Operations
+void Unity_Lerp_float(float A, float B, float T, out float Out);
+
+[numthreads(8, 8, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // We dispatch 32 thread groups each with 8 threads for x and y for performance reasons, but our _Resolution might be smaller than that
+    if (id.x >= _Resolution || id.y >= _Resolution)
+        return;
+
+    uint i = (_Resolution * id.y) + id.x;
+
+    // Voronoi - First Octave
+    float2 tileAndOffsetVoronoiOut;
+    Unity_TilingAndOffset_float(id.xy * _Frequency, float2 (1, 1), float2(_OffsetX, _OffsetY), tileAndOffsetVoronoiOut);
+    float voronoiOut;
+    float voronoiCellsOut;
+    Unity_Voronoi_float(tileAndOffsetVoronoiOut, _AngleOffset1, _CellDensity1, voronoiOut, voronoiCellsOut);
+
+    // Voronoi - Second Octave
+    float2 tileAndOffsetVoronoiOut2;
+    Unity_TilingAndOffset_float(id.xy * _Frequency, float2 (1, 1), float2(_OffsetX, _OffsetY), tileAndOffsetVoronoiOut2);
+    float voronoiOut2;
+    float voronoiCellsOut2;
+    Unity_Voronoi_float(tileAndOffsetVoronoiOut2, _AngleOffset2, _CellDensity2, voronoiOut2, voronoiCellsOut2);
+    float lerpOut;
+    Unity_Lerp_float(voronoiOut2, 1, _LerpDelta, lerpOut);
+
+    // Simple Noise
+    float2 tileAndOffsetSimpleNoiseOut;
+    Unity_TilingAndOffset_float(id.xy * _Frequency, float2 (1, 1), float2(_OffsetX, _OffsetY), tileAndOffsetSimpleNoiseOut);
+    float simpleNoiseOut;
+    Unity_SimpleNoise_float(tileAndOffsetSimpleNoiseOut, _NoiseScale, simpleNoiseOut);
+
+    // Multiply
+    float multiplyOut;
+    Unity_Multiply_float(voronoiOut, simpleNoiseOut, multiplyOut);
+    float multiplyOut2;
+    Unity_Multiply_float(lerpOut, multiplyOut, multiplyOut2);
+
+    //Result[id.xy] = multiplyOut2;
+    _HeightMap[i] = multiplyOut2;
+    //_HeightMapTest[i] = id.xy;
+}
+
+void Unity_TilingAndOffset_float(float2 UV, float2 Tiling, float2 Offset, out float2 Out)
+{
+    Out = (UV * Tiling) + (Offset);
+}
+
+inline float2 Unity_Voronoi_RandomVector_float(float2 UV, float offset)
+{
+    float2x2 m = float2x2(15.27, 47.63, 99.41, 89.98);
+    UV = frac(sin(mul(UV, m)));
+    return float2(sin(UV.y * +offset) * 0.5 + 0.5, cos(UV.x * offset) * 0.5 + 0.5);
+}
+
+void Unity_Voronoi_float(float2 UV, float AngleOffset, float CellDensity, out float Out, out float Cells)
+{
+    float2 g = floor(UV * CellDensity);
+    float2 f = frac(UV * CellDensity);
+    float t = 8.0;
+    float3 res = float3(8.0, 0.0, 0.0);
+
+    for (int y = -1; y <= 1; y++)
+    {
+        for (int x = -1; x <= 1; x++)
+        {
+            float2 lattice = float2(x, y);
+            float2 offset = Unity_Voronoi_RandomVector_float(lattice + g, AngleOffset);
+            float d = distance(lattice + offset, f);
+
+            if (d < res.x)
+            {
+                res = float3(d, offset.x, offset.y);
+                Out = res.x;
+                Cells = res.y;
+            }
+        }
+    }
+}
+
+inline float Unity_SimpleNoise_RandomValue_float(float2 uv)
+{
+    return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+inline float Unity_SimpleNnoise_Interpolate_float(float a, float b, float t)
+{
+    return (1.0 - t) * a + (t * b);
+}
+
+inline float Unity_SimpleNoise_ValueNoise_float(float2 uv)
+{
+    float2 i = floor(uv);
+    float2 f = frac(uv);
+    f = f * f * (3.0 - 2.0 * f);
+
+    uv = abs(frac(uv) - 0.5);
+    float2 c0 = i + float2(0.0, 0.0);
+    float2 c1 = i + float2(1.0, 0.0);
+    float2 c2 = i + float2(0.0, 1.0);
+    float2 c3 = i + float2(1.0, 1.0);
+    float r0 = Unity_SimpleNoise_RandomValue_float(c0);
+    float r1 = Unity_SimpleNoise_RandomValue_float(c1);
+    float r2 = Unity_SimpleNoise_RandomValue_float(c2);
+    float r3 = Unity_SimpleNoise_RandomValue_float(c3);
+
+    float bottomOfGrid = Unity_SimpleNnoise_Interpolate_float(r0, r1, f.x);
+    float topOfGrid = Unity_SimpleNnoise_Interpolate_float(r2, r3, f.x);
+    float t = Unity_SimpleNnoise_Interpolate_float(bottomOfGrid, topOfGrid, f.y);
+    return t;
+}
+void Unity_SimpleNoise_float(float2 UV, float Scale, out float Out)
+{
+    float t = 0.0;
+
+    float freq = pow(2.0, float(0));
+    float amp = pow(0.5, float(3 - 0));
+    t += Unity_SimpleNoise_ValueNoise_float(float2(UV.x * Scale / freq, UV.y * Scale / freq)) * amp;
+
+    freq = pow(2.0, float(1));
+    amp = pow(0.5, float(3 - 1));
+    t += Unity_SimpleNoise_ValueNoise_float(float2(UV.x * Scale / freq, UV.y * Scale / freq)) * amp;
+
+    freq = pow(2.0, float(2));
+    amp = pow(0.5, float(3 - 2));
+    t += Unity_SimpleNoise_ValueNoise_float(float2(UV.x * Scale / freq, UV.y * Scale / freq)) * amp;
+
+    Out = t;
+}
+
+void Unity_Multiply_float(float A, float B, out float Out)
+{
+    Out = A * B;
+}
+
+void Unity_Lerp_float(float A, float B, float T, out float Out)
+{
+    Out = lerp(A, B, T);
+}
